@@ -21,6 +21,7 @@
 - Update README examples to use LLMClient and dict-based sort inputs.
 - Trim `local_llm_wrapper/llm.py` exports to the planned public surface.
 - Set the project version to 0.1 in `pyproject.toml` and add a `VERSION` file.
+- Add an API implementation guide for sibling repos.
 - Expand README with usage examples, testing, and docs pointers.
 - Add a README CLI example for quiet `generate`.
 - Add a README chat example for unified message-based generation.
