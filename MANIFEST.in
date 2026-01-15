@@ -1,0 +1,6 @@
+include LICENSE
+include README.md
+include project.toml
+recursive-include docs *.md
+recursive-include local_llm_wrapper *.py
+recursive-include tests *.py
