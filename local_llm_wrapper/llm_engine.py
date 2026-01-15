@@ -28,6 +28,8 @@ from .llm_prompts import (
 from .llm_utils import (
 	compute_stem_features,
 	_ensure_text_prompt,
+	_ensure_chat_messages,
+	format_chat_prompt,
 	_is_guardrail_error,
 	_is_context_window_error,
 	_print_llm,
@@ -47,10 +49,27 @@ class LLMEngine:
 	quiet: bool = False
 
 	#============================================
-	def generate(self, prompt: str, *, purpose: str | None = None, max_tokens: int = 1200) -> str:
-		text_prompt = _ensure_text_prompt(prompt)
+	def generate(
+		self,
+		prompt: str | None = None,
+		*,
+		messages: list[dict[str, str]] | None = None,
+		purpose: str | None = None,
+		max_tokens: int = 1200,
+	) -> str:
+		if prompt is None and messages is None:
+			raise ValueError("Prompt or messages are required.")
+		if prompt is not None and messages is not None:
+			raise ValueError("Provide prompt or messages, not both.")
+		text_prompt: str | None = None
+		chat_messages: list[dict[str, str]] | None = None
+		if messages is not None:
+			chat_messages = _ensure_chat_messages(messages)
+		else:
+			text_prompt = _ensure_text_prompt(prompt)
 		return self._generate_with_fallback(
 			text_prompt,
+			messages=chat_messages,
 			purpose=purpose or "general response",
 			max_tokens=max_tokens,
 			retry_prompt=None,
@@ -62,6 +81,7 @@ class LLMEngine:
 		prompt = build_rename_prompt(req)
 		raw = self._generate_with_fallback(
 			prompt,
+			messages=None,
 			purpose="filename based on content",
 			max_tokens=200,
 			retry_prompt=build_rename_prompt_minimal(req),
@@ -90,6 +110,7 @@ class LLMEngine:
 		prompt = build_keep_prompt(req)
 		raw = self._generate_with_fallback(
 			prompt,
+			messages=None,
 			purpose="how to handle the original filename stem",
 			max_tokens=120,
 			retry_prompt=None,
@@ -117,6 +138,7 @@ class LLMEngine:
 			prompt = build_sort_prompt(req)
 			raw = self._generate_with_fallback(
 				prompt,
+				messages=None,
 				purpose="category assignment",
 				max_tokens=120,
 				retry_prompt=None,
@@ -138,8 +160,9 @@ class LLMEngine:
 	#============================================
 	def _generate_with_fallback(
 		self,
-		prompt: str,
+		prompt: str | None,
 		*,
+		messages: list[dict[str, str]] | None,
 		purpose: str,
 		max_tokens: int,
 		retry_prompt: str | None,
@@ -149,7 +172,13 @@ class LLMEngine:
 			try:
 				if not self.quiet:
 					_print_llm(f"asking {transport.name} for {purpose}")
-				return self._generate_on_transport(transport, prompt, purpose, max_tokens)
+				return self._generate_on_transport(
+					transport,
+					prompt,
+					messages,
+					purpose,
+					max_tokens,
+				)
 			except Exception as exc:
 				last_exc = exc
 				if isinstance(exc, TransportUnavailableError):
@@ -162,7 +191,11 @@ class LLMEngine:
 									f"retrying {transport.name} with minimal prompt for {purpose}"
 								)
 							return self._generate_on_transport(
-								transport, retry_prompt, purpose, max_tokens
+								transport,
+								retry_prompt,
+								None,
+								purpose,
+								max_tokens,
 							)
 						except Exception as retry_exc:
 							last_exc = retry_exc
@@ -210,6 +243,7 @@ class LLMEngine:
 					fixed = self._generate_on_transport(
 						transport,
 						fix_prompt,
+						None,
 						f"{purpose} (format fix)",
 						max_tokens,
 					)
@@ -243,8 +277,16 @@ class LLMEngine:
 	def _generate_on_transport(
 		self,
 		transport: LLMTransport,
-		prompt: str,
+		prompt: str | None,
+		messages: list[dict[str, str]] | None,
 		purpose: str,
 		max_tokens: int,
 	) -> str:
+		if messages is not None:
+			generate_chat = getattr(transport, "generate_chat", None)
+			if callable(generate_chat):
+				return generate_chat(messages, purpose=purpose, max_tokens=max_tokens)
+			prompt = format_chat_prompt(messages)
+		if prompt is None:
+			raise ValueError("Prompt or messages are required.")
 		return transport.generate(prompt, purpose=purpose, max_tokens=max_tokens)

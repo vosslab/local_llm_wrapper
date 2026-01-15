@@ -11,21 +11,12 @@ from .errors import (
 	LLMError,
 	TransportUnavailableError,
 )
-from .llm_engine import LLMEngine
-from .llm_parsers import KeepResult, RenameResult, SortResult, ParseError
-from .llm_prompts import KeepRequest, RenameRequest, SortItem, SortRequest
+from .llm_client import LLMClient
+from .llm_parsers import RenameResult, SortResult
 from .llm_utils import (
-	ALLOWED_CATEGORIES,
-	MAX_FILENAME_CHARS,
-	PROMPT_FILENAME_CHARS,
-	MIN_MACOS_MAJOR,
 	apple_models_available,
-	compute_stem_features,
-	extract_xml_tag_content,
 	get_vram_size_in_gb as _get_vram_size_in_gb,
 	total_ram_bytes as _total_ram_bytes,
-	normalize_reason,
-	pick_category,
 	sanitize_filename,
 )
 from .transports.apple import AppleTransport
@@ -70,27 +61,11 @@ __all__ = [
 	"TransportUnavailableError",
 	"ContextWindowError",
 	"GuardrailRefusalError",
-	"LLMEngine",
-	"KeepResult",
+	"LLMClient",
 	"RenameResult",
 	"SortResult",
-	"ParseError",
-	"KeepRequest",
-	"RenameRequest",
-	"SortItem",
-	"SortRequest",
-	"ALLOWED_CATEGORIES",
-	"MAX_FILENAME_CHARS",
-	"PROMPT_FILENAME_CHARS",
-	"MIN_MACOS_MAJOR",
 	"apple_models_available",
 	"choose_model",
-	"get_vram_size_in_gb",
-	"total_ram_bytes",
-	"compute_stem_features",
-	"extract_xml_tag_content",
-	"normalize_reason",
-	"pick_category",
 	"sanitize_filename",
 	"AppleTransport",
 	"OllamaTransport",

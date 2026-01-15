@@ -9,18 +9,19 @@ Local LLM wrapper with a simple, stable text-in text-out API. It supports multip
 
 ## Features
 - Pluggable transports in `local_llm_wrapper/transports/`.
-- Fallback chain in `LLMEngine` with guardrail and context-window handling.
+- Fallback chain in `LLMClient` with guardrail and context-window handling.
 - Structured prompts and parsers for rename, keep, and sort workflows.
 - Prompt sanitization and output normalization utilities.
 - Quiet mode for non-verbose runs.
+- Unified API for text prompts and chat-style message lists.
 
 ## Quick start
 ```python
-from local_llm_wrapper.llm_engine import LLMEngine
+from local_llm_wrapper.llm_client import LLMClient
 from local_llm_wrapper.llm_utils import choose_model
 from local_llm_wrapper.transports import AppleTransport, OllamaTransport
 
-engine = LLMEngine(
+client = LLMClient(
 	transports=[
 		AppleTransport(),
 		OllamaTransport(model=choose_model(None)),
@@ -28,30 +29,47 @@ engine = LLMEngine(
 	quiet=True,
 )
 
-response = engine.generate("Say hello in one sentence.", max_tokens=120)
+response = client.generate("Say hello in one sentence.", max_tokens=120)
 print(response)
+```
+
+## Chat example
+```python
+from local_llm_wrapper.llm_client import LLMClient
+from local_llm_wrapper.transports import OllamaTransport
+
+client = LLMClient(transports=[OllamaTransport(model="llama3.2:3b-instruct-q5_K_M")], quiet=True)
+messages = [
+	{"role": "system", "content": "Answer in one sentence."},
+	{"role": "user", "content": "What is a mutex?"},
+]
+print(client.generate(messages=messages, max_tokens=120))
 ```
 
 ## CLI example
 ```bash
-python3 -c 'from local_llm_wrapper.llm_engine import LLMEngine; \
+python3 -c 'from local_llm_wrapper.llm_client import LLMClient; \
 from local_llm_wrapper.llm_utils import choose_model; \
 from local_llm_wrapper.transports import OllamaTransport; \
-engine = LLMEngine(transports=[OllamaTransport(model=choose_model(None))], quiet=True); \
-print(engine.generate("Say hello in one sentence.", max_tokens=80))'
+client = LLMClient(transports=[OllamaTransport(model=choose_model(None))], quiet=True); \
+print(client.generate("Say hello in one sentence.", max_tokens=80))'
 ```
 
 ## Structured helpers
 The engine includes structured helpers for common file-organization tasks.
 
 ```python
-from local_llm_wrapper.llm_engine import LLMEngine
-from local_llm_wrapper.llm_prompts import SortItem
+from local_llm_wrapper.llm_client import LLMClient
 from local_llm_wrapper.transports import OllamaTransport
 
-engine = LLMEngine(transports=[OllamaTransport(model="llama3.2:3b-instruct-q5_K_M")])
-item = SortItem(path="notes.txt", name="notes", ext="txt", description="meeting notes")
-result = engine.sort([item])
+client = LLMClient(transports=[OllamaTransport(model="llama3.2:3b-instruct-q5_K_M")])
+item = {
+	"path": "notes.txt",
+	"name": "notes",
+	"ext": "txt",
+	"description": "meeting notes",
+}
+result = client.sort([item])
 print(result.assignments)
 ```
 

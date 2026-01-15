@@ -55,6 +55,7 @@ _GENERIC_LABEL_RE = re.compile(
 	r"^(img|dsc|scan|screenshot|document|download|file|image|photo|picture)[-_ .]*\d+$",
 	re.IGNORECASE,
 )
+_ALLOWED_CHAT_ROLES = {"system", "user", "assistant"}
 
 _GUARDRAIL_ERRORS: tuple[type[BaseException], ...] = ()
 try:
@@ -83,6 +84,47 @@ def _ensure_text_prompt(prompt: object) -> str:
 	if not isinstance(prompt, str):
 		raise TypeError("Prompt must be text.")
 	return prompt
+
+
+def _ensure_chat_messages(messages: object) -> list[dict[str, str]]:
+	"""
+	Validate chat messages and return a sanitized list.
+	"""
+	if not isinstance(messages, (list, tuple)):
+		raise TypeError("Chat messages must be a list.")
+	cleaned: list[dict[str, str]] = []
+	for msg in messages:
+		if not isinstance(msg, dict):
+			raise TypeError("Chat messages must contain dict items.")
+		if "role" not in msg or "content" not in msg:
+			raise ValueError("Chat messages must include role and content.")
+		role = str(msg["role"]).strip().lower()
+		if role not in _ALLOWED_CHAT_ROLES:
+			raise ValueError(f"Unsupported chat role: {role}")
+		content = msg["content"]
+		if not isinstance(content, str):
+			raise TypeError("Chat message content must be text.")
+		sanitized = _sanitize_prompt_text(content)
+		if not sanitized:
+			raise ValueError("Chat message content is empty.")
+		cleaned.append({"role": role, "content": sanitized})
+	if not cleaned:
+		raise ValueError("Chat messages are empty.")
+	return cleaned
+
+
+def format_chat_prompt(messages: list[dict[str, str]]) -> str:
+	"""
+	Format chat messages into a text prompt for completion-style backends.
+	"""
+	cleaned = _ensure_chat_messages(messages)
+	lines: list[str] = []
+	for msg in cleaned:
+		label = msg["role"].capitalize()
+		lines.append(f"{label}: {msg['content']}")
+	if cleaned[-1]["role"] != "assistant":
+		lines.append("Assistant:")
+	return "\n".join(lines).strip()
 
 
 def log_parse_failure(

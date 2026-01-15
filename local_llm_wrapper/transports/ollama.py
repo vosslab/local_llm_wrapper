@@ -43,6 +43,22 @@ class OllamaTransport:
 		messages.append({"role": "user", "content": prompt})
 		return messages
 
+	def _build_messages_from_chat(self, messages: list[dict[str, str]]) -> list[dict[str, str]]:
+		combined: list[dict[str, str]] = []
+		if self.system_message:
+			combined.append({"role": "system", "content": self.system_message})
+		if self.use_history and self.messages:
+			combined.extend(self.messages)
+		combined.extend(messages)
+		return combined
+
+	def _last_user_message(self, messages: list[dict[str, str]]) -> str | None:
+		for msg in reversed(messages):
+			if msg.get("role") == "user":
+				content = msg.get("content", "")
+				return content if isinstance(content, str) and content else None
+		return None
+
 	def _trim_history(self) -> None:
 		if not self.use_history:
 			return
@@ -91,4 +107,41 @@ class OllamaTransport:
 		if not assistant_message:
 			raise RuntimeError("Ollama chat returned empty content")
 		self._record_history(prompt, assistant_message)
+		return assistant_message
+
+	def generate_chat(
+		self,
+		messages: list[dict[str, str]],
+		*,
+		purpose: str,
+		max_tokens: int,
+	) -> str:
+		combined = self._build_messages_from_chat(messages)
+		payload: dict[str, object] = {
+			"model": self.model,
+			"messages": combined,
+			"stream": False,
+			"options": {"num_predict": max_tokens},
+		}
+		time.sleep(random.random())
+		request = urllib.request.Request(
+			f"{self.base_url}/api/chat",
+			data=json.dumps(payload).encode("utf-8"),
+			headers={"Content-Type": "application/json"},
+			method="POST",
+		)
+		try:
+			with urllib.request.urlopen(request, timeout=30) as response:
+				if response.status >= 400:
+					raise RuntimeError(f"Ollama chat error: status {response.status}")
+				response_body = response.read()
+		except urllib.error.URLError as exc:
+			raise TransportUnavailableError("Ollama is unreachable.") from exc
+		parsed = json.loads(response_body.decode("utf-8"))
+		assistant_message = parsed.get("message", {}).get("content", "")
+		if not assistant_message:
+			raise RuntimeError("Ollama chat returned empty content")
+		last_user = self._last_user_message(messages)
+		if last_user:
+			self._record_history(last_user, assistant_message)
 		return assistant_message

@@ -3,6 +3,8 @@
 ## 2026-01-15
 - Add standardized LLM errors and transport-availability handling.
 - Add quiet mode and a general text-only generate method.
+- Add unified chat-or-prompt generation support with chat formatting helpers.
+- Add Ollama chat-generation support for message lists.
 - Add Apple transport instructions and retry support.
 - Add Ollama transport history options with bounded turns and unreachable detection.
 - Export the transport protocol alongside Apple and Ollama transports.
@@ -10,8 +12,18 @@
 - Add architecture and file-structure documentation.
 - Add a root-level `project.toml` with basic project metadata.
 - Add notes summarizing the sibling OpenAI wrapper repo.
+- Add a public API planning doc for cross-repo usage.
+- Expand the public API plan with extended justifications and repo references.
+- Update the public API plan with design decisions and stability rules.
+- Implement the public API plan with a new LLMClient wrapper and docs updates.
+- Add a pytest for the LLMClient wrapper.
+- Update architecture docs to reflect the LLMClient public entry point.
+- Update README examples to use LLMClient and dict-based sort inputs.
+- Trim `local_llm_wrapper/llm.py` exports to the planned public surface.
+- Set the project version to 0.1 in `pyproject.toml` and add a `VERSION` file.
 - Expand README with usage examples, testing, and docs pointers.
 - Add a README CLI example for quiet `generate`.
+- Add a README chat example for unified message-based generation.
 - Expand pytest coverage for rename and sort flows.
 - Add packaging files for PyPI builds (pyproject.toml, MANIFEST.in).
 - Add pytest coverage for parsers and utilities.

@@ -24,6 +24,7 @@ from local_llm_wrapper.llm_prompts import (
 	build_rename_prompt,
 	build_rename_prompt_minimal,
 )
+from local_llm_wrapper.llm_utils import format_chat_prompt
 
 #============================================
 
@@ -50,6 +51,25 @@ class ScriptedTransport:
 		return self.default_response
 
 
+@dataclass(slots=True)
+class ChatOnlyTransport:
+	name: str
+	calls: list[list[dict[str, str]]] = field(default_factory=list)
+
+	def generate(self, prompt: str, *, purpose: str, max_tokens: int) -> str:
+		raise RuntimeError("Chat-only transport should not use text prompts.")
+
+	def generate_chat(
+		self,
+		messages: list[dict[str, str]],
+		*,
+		purpose: str,
+		max_tokens: int,
+	) -> str:
+		self.calls.append(messages)
+		return "chat-ok"
+
+
 def _noop_log_parse_failure(
 	*,
 	purpose: str,
@@ -69,10 +89,38 @@ def _noop_log_parse_failure(
 def test_generate_requires_text_prompt() -> None:
 	transport = ScriptedTransport(name="T1", default_response="ok")
 	engine = LLMEngine(transports=[transport], quiet=True)
+	with pytest.raises(ValueError):
+		engine.generate()
 	with pytest.raises(TypeError):
 		engine.generate(b"bytes")
 	with pytest.raises(TypeError):
 		engine.generate(pathlib.Path("prompt.txt"))
+	with pytest.raises(TypeError):
+		engine.generate(messages="nope")
+
+
+def test_generate_chat_uses_chat_transport() -> None:
+	transport = ChatOnlyTransport(name="Chat")
+	engine = LLMEngine(transports=[transport], quiet=True)
+	messages = [
+		{"role": "system", "content": "Be brief."},
+		{"role": "user", "content": "Hello"},
+	]
+	response = engine.generate(messages=messages, max_tokens=32)
+	assert response == "chat-ok"
+	assert transport.calls == [messages]
+
+
+def test_generate_chat_falls_back_to_text_prompt() -> None:
+	messages = [
+		{"role": "system", "content": "Be brief."},
+		{"role": "user", "content": "Hello"},
+	]
+	transport = ScriptedTransport(name="TextOnly", default_response="ok")
+	engine = LLMEngine(transports=[transport], quiet=True)
+	response = engine.generate(messages=messages, max_tokens=32)
+	assert response == "ok"
+	assert transport.calls == [format_chat_prompt(messages)]
 
 
 def test_generate_skips_unavailable_transport() -> None:
