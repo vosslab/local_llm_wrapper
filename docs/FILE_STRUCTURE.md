@@ -4,6 +4,7 @@
 - `AGENTS.md`: Agent workflow and environment constraints.
 - `LICENSE`: Project license text.
 - `README.md`: High-level description of the wrapper.
+- `llm_generate.py`: Repo-root CLI helper for quick prompt tests.
 - `docs/`: Project documentation, style rules, and planning notes.
 - `local_llm_wrapper/`: Core Python package for the wrapper.
 - `tests/`: Pytest tests and lint/ASCII compliance scripts.

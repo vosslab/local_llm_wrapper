@@ -2,6 +2,8 @@
 
 Local LLM wrapper with a simple, stable text-in text-out API. It supports multiple local backends (for example Ollama and Apple) via pluggable transports, with structured output helpers and robust parsing plus retry for unattended runs.
 
+Package name: `local-llm-wrapper` (import as `local_llm_wrapper`).
+
 ## Overview
 - Library-first wrapper for local text models with a small, stable API.
 - Fallback across transports when a backend is unavailable.
@@ -48,12 +50,22 @@ print(client.generate(messages=messages, max_tokens=120))
 
 ## CLI example
 ```bash
-python3 -c 'from local_llm_wrapper.llm_client import LLMClient; \
-from local_llm_wrapper.llm_utils import choose_model; \
-from local_llm_wrapper.transports import OllamaTransport; \
-client = LLMClient(transports=[OllamaTransport(model=choose_model(None))], quiet=True); \
-print(client.generate("Say hello in one sentence.", max_tokens=80))'
+/opt/homebrew/opt/python@3.12/bin/python3.12 llm_generate.py -p "Say hello in one sentence." -t 80
 ```
+
+## CLI usage
+`llm_generate.py` is a repo-root helper for quick prompt tests against the Ollama transport.
+
+```bash
+/opt/homebrew/opt/python@3.12/bin/python3.12 llm_generate.py --help
+```
+
+Options:
+- `-p, --prompt`: Prompt text to send (default: "Say hello in one sentence.").
+- `-m, --model`: Override the auto-selected model (default: auto).
+- `-t, --max-tokens`: Maximum tokens to generate (default: 80).
+- `-q, --quiet`: Suppress progress output (default).
+- `-v, --verbose`: Show progress output.
 
 ## Structured helpers
 The engine includes structured helpers for common file-organization tasks.

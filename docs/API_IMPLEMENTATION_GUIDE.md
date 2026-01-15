@@ -7,6 +7,7 @@
 
 ## Install and import
 - Depend on this repo as a local package or editable install.
+- Package name: `local-llm-wrapper` (import as `local_llm_wrapper`).
 - Import from `local_llm_wrapper.llm_client` for the primary entry point.
 
 ```python

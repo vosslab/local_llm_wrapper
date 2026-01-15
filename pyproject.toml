@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "local-llm-wrapper"
 version = "0.1"
-description = "Local LLM wrapper with a simple, stable text-in text-out API."
+description = "Local LLM wrapper (import local_llm_wrapper) with a stable text-in text-out API."
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.12"
