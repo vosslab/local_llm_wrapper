@@ -13,6 +13,9 @@ import re
 import subprocess
 import sys
 
+# local repo modules
+from .errors import ContextWindowError, GuardrailRefusalError
+
 #============================================
 
 
@@ -67,6 +70,19 @@ def _print_llm(label: str) -> None:
 		print(f"\033[36m[LLM]\033[0m {label}")
 	else:
 		print(f"[LLM] {label}")
+
+
+def _ensure_text_prompt(prompt: object) -> str:
+	"""
+	Ensure prompts are plain text, not bytes or file paths.
+	"""
+	if isinstance(prompt, bytes):
+		raise TypeError("Prompt must be text, not bytes.")
+	if isinstance(prompt, os.PathLike):
+		raise TypeError("Prompt must be text, not a file path.")
+	if not isinstance(prompt, str):
+		raise TypeError("Prompt must be text.")
+	return prompt
 
 
 def log_parse_failure(
@@ -304,6 +320,8 @@ def apple_models_available() -> bool:
 
 
 def _is_context_window_error(exc: Exception) -> bool:
+	if isinstance(exc, ContextWindowError):
+		return True
 	name = exc.__class__.__name__.lower()
 	message = str(exc).lower()
 	if "contextwindow" in name or "contextwindow" in message:
@@ -407,6 +425,8 @@ def pick_category(extension: str) -> str:
 
 
 def _is_guardrail_error(exc: Exception) -> bool:
+	if isinstance(exc, GuardrailRefusalError):
+		return True
 	if _GUARDRAIL_ERRORS and isinstance(exc, _GUARDRAIL_ERRORS):
 		return True
 	name = exc.__class__.__name__.lower()

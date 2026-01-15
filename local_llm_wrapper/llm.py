@@ -5,6 +5,12 @@ Compatibility exports for LLM utilities and engine.
 
 from __future__ import annotations
 
+from .errors import (
+	ContextWindowError,
+	GuardrailRefusalError,
+	LLMError,
+	TransportUnavailableError,
+)
 from .llm_engine import LLMEngine
 from .llm_parsers import KeepResult, RenameResult, SortResult, ParseError
 from .llm_prompts import KeepRequest, RenameRequest, SortItem, SortRequest
@@ -60,6 +66,10 @@ def choose_model(model_override: str | None) -> str:
 
 
 __all__ = [
+	"LLMError",
+	"TransportUnavailableError",
+	"ContextWindowError",
+	"GuardrailRefusalError",
 	"LLMEngine",
 	"KeepResult",
 	"RenameResult",

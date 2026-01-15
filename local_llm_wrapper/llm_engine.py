@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 # local repo modules
+from .errors import TransportUnavailableError
 from .llm_parsers import ParseError, KeepResult, RenameResult, SortResult, parse_keep_response, parse_rename_response, parse_sort_response
 from .llm_prompts import (
 	KeepRequest,
@@ -26,6 +27,7 @@ from .llm_prompts import (
 )
 from .llm_utils import (
 	compute_stem_features,
+	_ensure_text_prompt,
 	_is_guardrail_error,
 	_is_context_window_error,
 	_print_llm,
@@ -42,6 +44,17 @@ from .transports.base import LLMTransport
 class LLMEngine:
 	transports: list[LLMTransport]
 	context: str | None = None
+	quiet: bool = False
+
+	#============================================
+	def generate(self, prompt: str, *, purpose: str | None = None, max_tokens: int = 1200) -> str:
+		text_prompt = _ensure_text_prompt(prompt)
+		return self._generate_with_fallback(
+			text_prompt,
+			purpose=purpose or "general response",
+			max_tokens=max_tokens,
+			retry_prompt=None,
+		)
 
 	#============================================
 	def rename(self, current_name: str, metadata: dict) -> RenameResult:
@@ -134,16 +147,20 @@ class LLMEngine:
 		last_exc: Exception | None = None
 		for idx, transport in enumerate(self.transports):
 			try:
-				_print_llm(f"asking {transport.name} for {purpose}")
+				if not self.quiet:
+					_print_llm(f"asking {transport.name} for {purpose}")
 				return self._generate_on_transport(transport, prompt, purpose, max_tokens)
 			except Exception as exc:
 				last_exc = exc
+				if isinstance(exc, TransportUnavailableError):
+					continue
 				if _is_guardrail_error(exc) or _is_context_window_error(exc):
 					if retry_prompt and idx == 0:
 						try:
-							_print_llm(
-								f"retrying {transport.name} with minimal prompt for {purpose}"
-							)
+							if not self.quiet:
+								_print_llm(
+									f"retrying {transport.name} with minimal prompt for {purpose}"
+								)
 							return self._generate_on_transport(
 								transport, retry_prompt, purpose, max_tokens
 							)
@@ -156,7 +173,7 @@ class LLMEngine:
 				raise
 		if last_exc:
 			raise last_exc
-		raise RuntimeError("No LLM transports available.")
+		raise TransportUnavailableError("No LLM transports available.")
 
 	#============================================
 	def _parse_with_retry(
@@ -173,7 +190,8 @@ class LLMEngine:
 			return parser(raw_text)
 		except ParseError as exc:
 			excerpt = " ".join(raw_text.split())[:160]
-			print(f"[WHY] parse_error: {exc} (excerpt: {excerpt})")
+			if not self.quiet:
+				print(f"[WHY] parse_error: {exc} (excerpt: {excerpt})")
 			log_parse_failure(
 				purpose=purpose,
 				error=exc,
@@ -187,7 +205,8 @@ class LLMEngine:
 			last_fixed: str | None = None
 			for transport in self.transports:
 				try:
-					_print_llm(f"asking {transport.name} for {purpose} (format fix)")
+					if not self.quiet:
+						_print_llm(f"asking {transport.name} for {purpose} (format fix)")
 					fixed = self._generate_on_transport(
 						transport,
 						fix_prompt,
