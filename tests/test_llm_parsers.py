@@ -9,7 +9,13 @@ from __future__ import annotations
 import pytest
 
 # local repo modules
-from local_llm_wrapper.llm_parsers import ParseError, parse_keep_response, parse_rename_response, parse_sort_response
+from local_llm_wrapper.llm_parsers import (
+	ParseError,
+	parse_keep_response,
+	parse_rename_response,
+	parse_sort_response,
+	parse_tag_response,
+)
 
 #============================================
 
@@ -50,3 +56,14 @@ def test_parse_sort_response_reason_optional() -> None:
 	result = parse_sort_response(text, ["a.txt"])
 	assert result.assignments["a.txt"] == "Document"
 	assert result.reasons == {}
+
+
+def test_parse_tag_response_ok() -> None:
+	text = "<answer>Hello there.</answer>"
+	result = parse_tag_response(text, "answer")
+	assert result == "Hello there."
+
+
+def test_parse_tag_response_missing_tag() -> None:
+	with pytest.raises(ParseError):
+		parse_tag_response("<reason>nope</reason>", "answer")

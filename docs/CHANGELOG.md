@@ -34,4 +34,5 @@
 - Add pytest coverage for prompt builders and utility helpers.
 - Add pytest conftest to ensure local imports resolve when running tests directly.
 - Remove the redundant `project.toml` now that `pyproject.toml` is the source of truth.
-- Add `llm_generate.py` as a root-level CLI helper plus README usage and file-structure updates.
+- Add repo-root CLI demos (`llm_generate.py`, `llm_chat.py`, `llm_xml_demo.py`) with README and file-structure updates.
+- Add a generic XML tag parser helper with coverage in parser tests.

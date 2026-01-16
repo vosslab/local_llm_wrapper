@@ -67,6 +67,27 @@ Options:
 - `-q, --quiet`: Suppress progress output (default).
 - `-v, --verbose`: Show progress output.
 
+## CLI chat demo
+`llm_chat.py` is an interactive chat loop that uses chat-style messages.
+
+```bash
+/opt/homebrew/opt/python@3.12/bin/python3.12 llm_chat.py
+```
+
+Options:
+- `-m, --model`: Override the auto-selected model (default: auto).
+- `-s, --system`: Optional system message to start the chat.
+- `-t, --max-tokens`: Maximum tokens to generate per response (default: 240).
+- `-q, --quiet`: Suppress progress output (default).
+- `-v, --verbose`: Show progress output.
+
+## XML tag demo
+`llm_xml_demo.py` requests a tagged response and extracts `<answer>` from the model output.
+
+```bash
+/opt/homebrew/opt/python@3.12/bin/python3.12 llm_xml_demo.py -p "Say hello in one sentence."
+```
+
 ## Structured helpers
 The engine includes structured helpers for common file-organization tasks.
 

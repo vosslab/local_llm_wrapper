@@ -47,6 +47,7 @@ class SortResult:
 
 
 _CODE_FENCE_RE = re.compile(r"```[a-zA-Z0-9_+-]*\n(.*?)```", re.DOTALL)
+_TAG_NAME_RE = re.compile(r"^[a-zA-Z0-9_:-]+$")
 
 
 def _strip_code_fences(text: str) -> str:
@@ -76,6 +77,25 @@ def _find_tag_values(text: str, tag: str) -> list[str]:
 		flags=re.IGNORECASE | re.DOTALL,
 	)
 	return [match.strip() for match in pattern.findall(text)]
+
+
+def parse_tag_response(text: str, tag: str) -> str:
+	response_body = _coerce_response_body(text)
+	if not response_body:
+		raise ParseError("Missing required tags in response.", text)
+	if not isinstance(tag, str):
+		raise TypeError("Tag name must be a string.")
+	tag_name = tag.strip()
+	if not tag_name:
+		raise ValueError("Tag name must not be empty.")
+	if not _TAG_NAME_RE.match(tag_name):
+		raise ValueError("Tag name must use letters, numbers, underscores, dashes, or colons.")
+	values = _find_tag_values(response_body, tag_name)
+	if not values:
+		raise ParseError(f"Missing <{tag_name}> in response.", text)
+	if len(values) > 1:
+		raise ParseError(f"Duplicate <{tag_name}> tags in response.", text)
+	return values[0]
 
 
 def parse_rename_response(text: str) -> RenameResult:
